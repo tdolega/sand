@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.19)
+project(sand)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_FLAGS -march=znver2)
+set(CMAKE_CXX_FLAGS -mtune=znver2)
+set(CMAKE_CXX_FLAGS -pthread)
+add_executable(sand main.cpp)
+target_link_libraries(sand sfml-graphics sfml-system sfml-window)

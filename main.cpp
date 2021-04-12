@@ -1,5 +1,3 @@
-// 120fps
-
 #include <SFML/Graphics.hpp>
 #include <cmath>
 #include <iostream>
@@ -21,6 +19,8 @@ int brushsize = 20;
 //int brushsize = 3;
 
 const float LIFETIME = 50000;
+
+const int SAND1WATER0 = 1;
 
 const int ITHREADS = 16;
 
@@ -46,8 +46,8 @@ public:
     Particle(unsigned x, unsigned y, sf::Time lifetimeAprox) {
         position.x = x;
         position.y = y;
-        float angle = ((myrand() % 20) + 80) * 3.14f / 180.f;
-        float speed = (myrand() % 50) + 50.f;
+//        float angle = ((myrand() % 20) + 80) * 3.14f / 180.f;
+//        float speed = (myrand() % 50) + 50.f;
 //        velocity = sf::Vector2f(std::cos(angle) * speed, std::sin(angle) * speed);
         auto lax = lifetimeAprox.asMilliseconds();
         lifetime = sf::milliseconds((myrand() % lax) * 0.25 + lax);
@@ -57,7 +57,7 @@ public:
 class ParticleSystem : public sf::Drawable, public sf::Transformable {
     const unsigned m_w, m_h;
     Particle **m_particles;
-    bool *m_moved;
+    short *m_moved;
     sf::VertexArray m_vertices;
     const sf::Time m_lifetime = sf::seconds(LIFETIME);
 
@@ -65,7 +65,7 @@ public:
     explicit ParticleSystem(unsigned w, unsigned h) :
             m_w(w), m_h(h),
             m_particles(new Particle *[w * h]()),
-            m_moved(new bool[w * h]()),
+            m_moved(new short[w * h]()),
             m_vertices(sf::Points, w * h) {
         for (unsigned y = 0; y < h; y++) {
             for (unsigned x = 0; x < w; x++) {
@@ -111,6 +111,18 @@ public:
 //                updateParticle(j + m_w * i, elapsed);
 //            }
 //        }
+    }
+
+    void update_v2(sf::Time elapsed) {
+        clearMMoved();
+
+        for(int j = 0; j < m_w; ++j){
+        for(int i = 0; i < m_h; ++i){
+//            for (int j = m_w - 1; j >= 0; --j) {
+//                for (int i = m_h - 1; i >= 0; --i) {
+                updateParticle_v2(j + m_w * i, elapsed);
+            }
+        }
     }
 
     void updateFakeMultithreaded(sf::Time elapsed) {
@@ -212,21 +224,24 @@ private:
         return true;
     }
 
-    bool getNextPosition(unsigned &x, unsigned &y, unsigned &idx) const {
+    bool getNextPosition(unsigned &x, unsigned &y, unsigned &idx, bool moved) const {
 //        int ny = y + 1;
 //        if (xytoi(x, ny, idx) && !m_particles[idx]) {
 //            y = ny;
 //            return true;
 //        }
-
-        int ny = y + 4 + myrand() % 4;
-        for (; ny > y; --ny) {
-            if (xytoi(x, ny, idx) && !m_particles[idx]) {
-                y = ny;
-                return true;
+        int ny;
+        if(!moved)
+            for (ny = y + 4 + myrand() % 4; ny > y; --ny) {
+                if (xytoi(x, ny, idx) && !m_particles[idx]) {
+                    y = ny;
+                    return true;
+                }
             }
-        }
-        ny = y + 1;
+        else if(xytoi(x, y + 1, idx) && !m_particles[idx])
+            return false;
+
+        ny = y + SAND1WATER0;
 
         int direction = (myrand() % 2) ? 1 : -1;
         int nx = x + direction;
@@ -244,23 +259,78 @@ private:
         return false;
     }
 
+    bool getNextPosition_v2(unsigned &x, unsigned &y, unsigned &idx) const {
+        int ny;
+        ny = y - 1;
+        if (xytoi(x, ny, idx) && m_particles[idx] && !m_moved[idx]) {
+            y = ny;
+            return true;
+        }
+//        if(!moved)
+//            for (ny = y - 4 - myrand() % 4; ny < y; ny++) {
+//                if (xytoi(x, ny, idx) && m_particles[idx] && !m_moved[idx]) {
+//                    y = ny;
+//                    return true;
+//                }
+//            }
+//        else if(xytoi(x, y + 1, idx) && !m_particles[idx])
+//            return false;
+
+        ny = y - SAND1WATER0;
+
+        int direction = (myrand() % 2) ? 1 : -1;
+        int nx = x + direction;
+        if (xytoi(nx, ny, idx) && m_particles[idx] && !m_moved[idx] && m_particles[idx+m_w]) {
+            x = nx;
+            y = ny;
+            return true;
+        }
+        nx = x - direction;
+        if (xytoi(nx, ny, idx) && m_particles[idx] && !m_moved[idx] && m_particles[idx+m_w]) {
+            x = nx;
+            y = ny;
+            return true;
+        }
+        return false;
+    }
+
     void updateParticle(unsigned idx, sf::Time elapsed) {
         auto &p = m_particles[idx];
         if (!p) return;
-        if (m_moved[idx]) return;
+        if (m_moved[idx] > 0) return;
 
 //        if (!updateParticleTime(idx, p, elapsed)) return;
 
         auto nx = idx % m_w;
         auto ny = idx / m_w;
         auto nidx = idx;
-        if (getNextPosition(nx, ny, nidx)) {
+        if (getNextPosition(nx, ny, nidx, m_moved[idx])) {
             p->position.x = nx;
             p->position.y = ny;
             m_vertices[idx].color.a = 0;
             m_vertices[nidx].color.a = 255;
             std::swap(m_particles[idx], m_particles[nidx]);
-            m_moved[nidx] = true;
+            m_moved[nidx]++;
+        }
+    }
+
+    void updateParticle_v2(unsigned idx, sf::Time elapsed) {
+        auto &p = m_particles[idx];
+        if (p) return;
+//        if (m_moved[idx] > 0) return;
+
+//        if (!updateParticleTime(idx, p, elapsed)) return;
+
+        auto nx = idx % m_w;
+        auto ny = idx / m_w;
+        auto nidx = idx;
+        if (getNextPosition_v2(nx, ny, nidx)) {
+            std::swap(m_particles[idx], m_particles[nidx]);
+            p->position.x = nx;
+            p->position.y = ny;
+            m_vertices[nidx].color.a = 0;
+            m_vertices[idx].color.a = 255;
+            m_moved[idx]++;
         }
     }
 
@@ -281,7 +351,7 @@ private:
 
 int main() {
     sf::RenderWindow window(sf::VideoMode(W, H), "sand");
-//    window.setFramerateLimit(144);
+//    window.setFramerateLimit(120);
 
     sf::Clock clock;
 
@@ -304,9 +374,10 @@ int main() {
         particles.handleMouse(window.mapPixelToCoords(mouse), wheelDelta);
 
         sf::Time elapsed = clock.restart();
-        particles.update(elapsed);
+//        particles.update(elapsed);
 //        particles.updateFakeMultithreaded(elapsed);
 //        particles.updateMultithreaded(elapsed);
+        particles.update_v2(elapsed);
 
         ms += elapsed.asMicroseconds();
         lc++;

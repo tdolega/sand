@@ -10,7 +10,7 @@
 class Chunk {
 public:
     Particle *m_particles;
-    std::vector<std::tuple<Particle &, Particle &, int, int>> m_swaps;
+    std::vector<std::pair<int, int>> m_swaps;
     std::mutex m_add;
 
     const int m_CW, m_CH, m_CX, m_CY, m_CI;
@@ -53,9 +53,9 @@ public:
         renderer.updateVertex(x, y, p.type);
     }
 
-    void scheduleMove(Particle &np, Particle &p, const int nidx, const int idx) {
+    void scheduleMove(const int nidx, const int idx) {
         m_add.lock();
-        m_swaps.emplace_back(np, p, nidx, idx);
+        m_swaps.emplace_back(nidx, idx);
         m_add.unlock();
     }
 };

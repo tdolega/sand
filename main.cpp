@@ -28,7 +28,8 @@ int main() {
         simulation.handleMouse(window.mapPixelToCoords(mouse), wheelDelta);
 
         auto elapsed = clock.restart();
-        simulation.update(elapsed);
+        simulation.update_ST(elapsed);
+//        simulation.update_MT(elapsed);
 
         ms += elapsed.asMicroseconds();
         lc++;

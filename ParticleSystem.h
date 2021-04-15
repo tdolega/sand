@@ -20,12 +20,28 @@ public:
 
     }
 
-    void update(sf::Time &elapsed) {
-//#pragma omp parallel for
+    void update_ST(sf::Time &elapsed) {
         for (int i = 0; i < m_map.m_MI; i++)
             m_chunkWorkers[i]->update(elapsed);
 
-//#pragma omp parallel for
+        for (int i = 0; i < m_map.m_MI; i++)
+            m_chunkWorkers[i]->commit();
+    }
+
+
+    void update_MT(sf::Time &elapsed) {
+        std::vector<std::thread> threads;
+        threads.reserve(m_map.m_MI);
+
+        for (int i = 0; i < m_map.m_MI; i++) {
+            threads.emplace_back(
+                [this, i, &elapsed] { this->m_chunkWorkers[i]->update(elapsed); }
+            );
+        }
+
+        for (auto &thread : threads)
+            thread.join();
+
         for (int i = 0; i < m_map.m_MI; i++)
             m_chunkWorkers[i]->commit();
     }
@@ -52,13 +68,15 @@ public:
             m_spawnT = T_STONE;
         else if (keycode.code == sf::Keyboard::Numpad4)
             m_spawnT = T_SANDPINK;
+        else if (keycode.code == sf::Keyboard::Numpad5)
+            m_spawnT = T_SMOKE;
     }
 
     void fillHalf() { // debug
         for(int y = 0; y < H/2; y++)
             for(int x = 0; x < W; x++){
                 auto &c = m_map.getChunk(x, y);
-                c.setParticle(x, y, Particle(myrand()%2 ? T_SAND : T_WATER));
+                c.setParticle(x, y, Particle(random_st()%2 ? T_SAND : T_WATER));
             }
     }
 
@@ -68,7 +86,7 @@ private:
             const int circle = (int) sqrt(pow(brushSize, 2) - pow(x, 2));
             for (int y = -circle; y <= circle; y++) {
                 if (m_spawnT != T_STONE
-                    && myrand() % 100 > FILL_PERC)
+                    && random_st() % 100 > FILL_PERC)
                     continue;
                 const int nx = (int) position.x / PIXEL_SIZE + x;
                 const int ny = (int) position.y / PIXEL_SIZE + y;

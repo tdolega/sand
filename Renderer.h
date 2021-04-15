@@ -8,7 +8,6 @@
 #include "variables.h"
 
 class Renderer : public sf::Drawable, public sf::Transformable {
-    sf::VertexArray m_vertices;
 
     void draw(sf::RenderTarget &target, sf::RenderStates states) const override {
 //        states.transform *= getTransform();
@@ -17,6 +16,7 @@ class Renderer : public sf::Drawable, public sf::Transformable {
     }
 
 public:
+    sf::VertexArray m_vertices;
     Renderer() :
             m_vertices(sf::Points, W * H * PIXEL_SIZE * PIXEL_SIZE) {
         for (int py = 0; py < PIXEL_SIZE; py++)
@@ -26,12 +26,12 @@ public:
                         auto &v = m_vertices[(x + W * y) + W * H * (px + py * PIXEL_SIZE)];
                         v.position.x = x * PIXEL_SIZE + px;
                         v.position.y = y * PIXEL_SIZE + py;
-                        v.color = sf::Color(T_EMPTY);
+                        v.color = sf::Color(0);
                     }
     }
 
-    void updateVertex(const int x, const int y, const types color) { updateVertex(x + W*y, color); }
-    void updateVertex(const int idx, const types color) {
+    void updateVertex(const int x, const int y, const unsigned color) { updateVertex(x + W*y, color); }
+    void updateVertex(const int idx, const unsigned color) {
         for (int pixel = 0; pixel < PIXEL_SIZE * PIXEL_SIZE; pixel++) {
             auto &v = m_vertices[idx + W*H*pixel];
             v.color = sf::Color(color);

@@ -21,7 +21,7 @@ public:
         }
     }
 
-    Particle* getNextPosition(const Particle &p, int &x, int &y) const {
+    Particle* getNextPosition(const Particle &p, int &x, int &y) {
         Particle* np;
         int ty, tx;
         unsigned mm = p.moveMask();
@@ -35,7 +35,7 @@ public:
             return (np->type == T_EMPTY
                     || ((mm & MOVES_FORCE)
                         && np->type != T_STONE
-                        && np->type != p.type));
+                        && !(np->moveMask() & MOVES_FORCE)));
         };
         auto goodMove = [&](const int nx, const int ny) {
             if(!exists(nx, ny) || !canSwap()) return false;
@@ -48,10 +48,14 @@ public:
             ty = y + 1;
             if (goodMove(x, ty)) return np;
         }
+        if (mm & MOVES_U) {
+            ty = y - 1;
+            if (goodMove(x, ty)) return np;
+        }
 
         int direction = p.velocity.x
                         ? (p.velocity.x & -1)
-                        : (myrand() % 2) ? 1 : -1;
+                        : (random_mt() % 2) ? 1 : -1;
         if (mm & MOVES_LR) {
             tx = x + direction;
             if (goodMove(tx, y)) return np;
@@ -61,6 +65,13 @@ public:
         if (mm & MOVES_LRD) {
             tx = x + direction;
             ty = y + 1;
+            if (goodMove(tx, ty)) return np;
+            tx = x - direction;
+            if (goodMove(tx, ty)) return np;
+        }
+        if (mm & MOVES_LRU) {
+            tx = x + direction;
+            ty = y - 1;
             if (goodMove(tx, ty)) return np;
             tx = x - direction;
             if (goodMove(tx, ty)) return np;
@@ -78,7 +89,7 @@ public:
             auto &c = m_chunk.inBounds(nx, ny) ? m_chunk : m_map.getChunk(nx, ny);
             int gidx = m_map.getParticleGIdx(x, y);
             int ngidx = m_map.getParticleGIdx(nx, ny);
-            c.scheduleMove(*np, p, ngidx, gidx);
+            c.scheduleMove(ngidx, gidx);
         } else {
             p.velocity.x = 0;
             p.velocity.y = 0;
@@ -89,34 +100,44 @@ public:
         auto &swaps = m_chunk.m_swaps;
 //        std::sort(std::execution::par_unseq, swaps.begin(), swaps.end(),
         std::sort(swaps.begin(), swaps.end(),
-                  [](auto &a, auto &b) { return std::get<2>(a) < std::get<2>(b); }
+                  [](auto &a, auto &b) { return a.first < b.first; }
         );
 
-        Particle &dupa = std::get<1>(swaps[0]);
-
-        Particle end;
-        swaps.emplace_back(end, end, -1, -1); // catch final move
+        swaps.emplace_back(-1, -1); // catch final move
 
         int iprev = 0;
         for (int i = 0; i < swaps.size() - 1; i++) {
-            if (std::get<2>(swaps[i + 1]) != std::get<2>(swaps[i])) {
-                int rand = iprev + myrand() % (i - iprev + 1);
-                auto &[dp, sp, didx, sidx] = swaps[rand];
-//                std::swap(dp, sp);
-                Particle &dp2 = m_map.getParticle(didx%W, didx/W);
-                Particle &sp2 = m_map.getParticle(sidx%W, sidx/W);
-                std::swap(dp2, sp2);
-                renderer.updateVertex(didx, dp2.type);
-                renderer.updateVertex(sidx, sp2.type);
+            if (swaps[i + 1].first != swaps[i].first) {
+                int rand = iprev + random_mt() % (i - iprev + 1);
+                auto [didx, sidx] = swaps[rand];
+                Particle &dp = m_map.getParticle(didx%W, didx/W);
+                Particle &sp = m_map.getParticle(sidx%W, sidx/W);
+                renderer.updateVertex(sidx, dp.type);
+                renderer.updateVertex(didx, sp.type);
+                std::swap(dp, sp);
                 iprev = i + 1;
             }
         }
         swaps.clear();
 
-        for(int i = 0; i < m_chunk.m_CI; i++) { // todo delete
-            auto [x, y] = m_chunk.getXY(i);
-            renderer.updateVertex(x, y, m_chunk.getParticle(i).type);
-        }
+//        for(int i = 0; i < m_chunk.m_CI; i++) { // todo delete
+//            auto [x, y] = m_chunk.getXY(i);
+//            renderer.updateVertex(x, y, m_chunk.getParticle(i).type);
+//        }
+    }
+
+    uint64_t wyhash64_x_mt;
+    uint64_t random_mt() {
+//        return random_st();
+//        return 1;
+//        return rand();
+        wyhash64_x_mt += 0x60bee2bee120fc15;
+        __uint128_t tmp;
+        tmp = (__uint128_t) wyhash64_x_mt * 0xa3b195354a39b70d;
+        uint64_t m1 = (tmp >> 64) ^tmp;
+        tmp = (__uint128_t) m1 * 0x1b03738712fad5c9;
+        uint64_t m2 = (tmp >> 64) ^tmp;
+        return m2;
     }
 };
 

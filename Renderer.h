@@ -30,9 +30,10 @@ public:
                     }
     }
 
-    void updateVertex(const int x, const int y, const unsigned color) {
+    void updateVertex(const int x, const int y, const types color) { updateVertex(x + W*y, color); }
+    void updateVertex(const int idx, const types color) {
         for (int pixel = 0; pixel < PIXEL_SIZE * PIXEL_SIZE; pixel++) {
-            auto &v = m_vertices[x + y * W + W * H * pixel];
+            auto &v = m_vertices[idx + W*H*pixel];
             v.color = sf::Color(color);
         }
     }

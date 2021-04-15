@@ -10,6 +10,8 @@ int main() {
     sf::RenderWindow window(sf::VideoMode(W * PIXEL_SIZE, H * PIXEL_SIZE), "sand");
 //    window.setFramerateLimit(120);
 
+    simulation.fillHalf();
+
     long lc = 0, ms = 0;
     while (window.isOpen()) {
         sf::Event event{};

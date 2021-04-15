@@ -10,9 +10,9 @@
 class Map {
 
 public:
-    int m_MXI = W / CHUNKSIZEX;
-    int m_MYI = H / CHUNKSIZEY;
-    int m_MI = m_MXI * m_MYI;
+    const int m_MXI = W / CHUNKSIZEX,
+            m_MYI = H / CHUNKSIZEY,
+            m_MI = m_MXI * m_MYI;
     Chunk **m_chunks;
 
     Map() :
@@ -23,21 +23,25 @@ public:
         }
     }
 
-    Particle *getParticle(const int x, const int y) const {
-        return getChunk(x, y)->getParticle(x, y);
+    Particle &getParticle(const int x, const int y) const {
+        return getChunk(x, y).getParticle(x, y);
     }
 
-    Chunk *getChunk(const int x, const int y) const {
-        return m_chunks[getChunkIdx(x, y)];
+    Chunk &getChunk(const int x, const int y) const {
+        return *m_chunks[getChunkIdx(x, y)];
     }
 
     int getChunkIdx(const int x, const int y) const {
         return (x / CHUNKSIZEX) + (y / CHUNKSIZEY) * m_MXI;
     }
 
+    int getParticleGIdx(const int x, const int y) const {
+        return x + W*y;
+    }
+
     bool inBounds(const int x, const int y) const {
         return x >= 0 && x < W
-               && y >= 0 && y < H;
+            && y >= 0 && y < H;
     }
 };
 

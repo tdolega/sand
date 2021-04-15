@@ -8,10 +8,12 @@
 #include "Renderer.h"
 
 struct Particle {
-    types type = T_EMPTY;
+    types type;
     sf::Time lifetime;
     sf::Vector2i velocity{0, 0};
     int hp = 100;
+
+    Particle(const types type = T_EMPTY) : type(type) {};
 
     void setLifetime(sf::Time lifetimeAprox) {
         auto lax = lifetimeAprox.asMilliseconds();
@@ -24,7 +26,7 @@ struct Particle {
             case T_SANDPINK:
                 return MOVES_D | MOVES_LRD | MOVES_FORCE;
             case T_WATER:
-                return MOVES_D | MOVES_LRD | MOVES_LR;
+                return MOVES_D | MOVES_LR;
             case T_SMOKE:
                 return MOVES_U | MOVES_LRU | MOVES_LR;
             default:

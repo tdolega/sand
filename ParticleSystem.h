@@ -17,7 +17,6 @@ public:
         m_chunkWorkers = new ChunkWorker *[m_map.m_MI];
         for (int i = 0; i < m_map.m_MI; i++)
             m_chunkWorkers[i] = new ChunkWorker(m_map, *m_map.m_chunks[i]);
-
     }
 
     void update_ST(sf::Time &elapsed) {
@@ -28,22 +27,25 @@ public:
             m_chunkWorkers[i]->commit();
     }
 
-
     void update_MT(sf::Time &elapsed) {
         std::vector<std::thread> threads;
         threads.reserve(m_map.m_MI);
 
-        for (int i = 0; i < m_map.m_MI; i++) {
+        for (int i = 0; i < m_map.m_MI; i++)
             threads.emplace_back(
                 [this, i, &elapsed] { this->m_chunkWorkers[i]->update(elapsed); }
             );
-        }
-
         for (auto &thread : threads)
             thread.join();
+        threads.clear();
 
         for (int i = 0; i < m_map.m_MI; i++)
-            m_chunkWorkers[i]->commit();
+            threads.emplace_back(
+                    [this, i] { this->m_chunkWorkers[i]->commit(); }
+            );
+        for (auto &thread : threads)
+            thread.join();
+        threads.clear();
     }
 
     void handleMouse(const sf::Vector2f &position, const int wheelDelta) {
@@ -51,7 +53,7 @@ public:
         if (wheelDelta && newBrushSize > 0)
             brushSize = newBrushSize;
 
-        if (!m_map.inBounds((int) position.x / PIXEL_SIZE, (int) position.y / PIXEL_SIZE)) return;
+        if (!m_map.inBounds((int) position.x, (int) position.y)) return;
 
         if (sf::Mouse::isButtonPressed(sf::Mouse::Right))
             removeParticles(position);
@@ -88,8 +90,8 @@ private:
                 if (m_spawnT != T_STONE
                     && random_st() % 100 > FILL_PERC)
                     continue;
-                const int nx = (int) position.x / PIXEL_SIZE + x;
-                const int ny = (int) position.y / PIXEL_SIZE + y;
+                const int nx = (int) position.x + x;
+                const int ny = (int) position.y + y;
                 if (!m_map.inBounds(nx, ny)) continue;
                 auto &c = m_map.getChunk(nx, ny);
                 auto &p = c.getParticle(nx, ny);
@@ -103,8 +105,8 @@ private:
         for (int x = -brushSize; x <= brushSize; x++) {
             int circle = (int) sqrt(pow(brushSize, 2) - pow(x, 2));
             for (int y = -circle; y <= circle; y++) {
-                const int nx = (int) position.x / PIXEL_SIZE + x;
-                const int ny = (int) position.y / PIXEL_SIZE + y;
+                const int nx = (int) position.x + x;
+                const int ny = (int) position.y + y;
                 if (!m_map.inBounds(nx, ny)) continue;
                 auto &c = m_map.getChunk(nx, ny);
                 auto &p = c.getParticle(nx, ny);

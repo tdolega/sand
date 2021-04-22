@@ -5,11 +5,16 @@
 #include "ParticleSystem.h"
 
 int main() {
-    ParticleSystem simulation;
     sf::Clock clock;
     sf::RenderWindow window(sf::VideoMode(W * PIXEL_SIZE, H * PIXEL_SIZE), "sand");
-//    window.setFramerateLimit(120);
+    if(FPS_LIMIT) window.setFramerateLimit(FPS_LIMIT);
+    sf::View view(sf::Vector2f((float)W/2, (float)H/2), sf::Vector2f(W, H));
+    window.setView(view);
+    sf::RenderTexture buffer;
+    buffer.create(W, H);
+    sf::Sprite bufferSprite(buffer.getTexture());
 
+    ParticleSystem simulation;
     simulation.fillHalf();
 
     long lc = 0, ms = 0;
@@ -28,8 +33,8 @@ int main() {
         simulation.handleMouse(window.mapPixelToCoords(mouse), wheelDelta);
 
         auto elapsed = clock.restart();
-        simulation.update_ST(elapsed);
-//        simulation.update_MT(elapsed);
+//        simulation.update_ST(elapsed);
+        simulation.update_MT(elapsed);
 
         ms += elapsed.asMicroseconds();
         lc++;
@@ -39,9 +44,14 @@ int main() {
             ms = lc = 0;
         }
 
+        buffer.clear();
+        buffer.draw(renderer);
+        buffer.display();
+
         window.clear();
-        window.draw(renderer);
+        window.draw(bufferSprite);
         window.display();
     }
+
     return 0;
 }

@@ -110,20 +110,21 @@ public:
             if (swaps[i + 1].first != swaps[i].first) {
                 int rand = iprev + random_mt() % (i - iprev + 1);
                 auto [didx, sidx] = swaps[rand];
-                Particle &dp = m_map.getParticle(didx%W, didx/W);
-                Particle &sp = m_map.getParticle(sidx%W, sidx/W);
-                renderer.updateVertex(sidx, dp.type);
-                renderer.updateVertex(didx, sp.type);
+                int dx = didx%W, dy = didx/W;
+                int sx = sidx%W, sy = sidx/W;
+                Particle &dp = m_chunk.getParticle(dx, dy);
+                Particle &sp = m_map.getParticle(sx, sy);
+                dp.velocity.x = sx - dx;
+                dp.velocity.y = sy - dy;
+                sp.velocity.x = dx - sx;
+                sp.velocity.y = dy - sy;
                 std::swap(dp, sp);
+                renderer.updateVertex(didx, dp.type);
+                renderer.updateVertex(sidx, sp.type);
                 iprev = i + 1;
             }
         }
         swaps.clear();
-
-//        for(int i = 0; i < m_chunk.m_CI; i++) { // todo delete
-//            auto [x, y] = m_chunk.getXY(i);
-//            renderer.updateVertex(x, y, m_chunk.getParticle(i).type);
-//        }
     }
 
     uint64_t wyhash64_x_mt;

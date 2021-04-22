@@ -7,22 +7,22 @@
 
 #include "importsxd.h"
 
-//const int W = 2400;
-//const int H = 1200;
+const int W = 2400;
+const int H = 1200;
+const int PIXEL_SIZE = 1;
 //int brushSize = 80;
 
-const int W = 600;
-const int H = 300;
-int brushSize = 20;
-const int PIXEL_SIZE = 2;
+//const int W = 600;
+//const int H = 300;
+//int brushSize = 20;
 
 //const int W = 400;
 //const int H = 200;
-//int brushSize = 3;
+int brushSize = 3;
 //const int PIXEL_SIZE = 4;
 
-const int CHUNKSIZEX = 100;
-const int CHUNKSIZEY = 100;
+const int CHUNKSIZEX = 200;
+const int CHUNKSIZEY = 200;
 //const int CHUNKSIZEX = 100;
 //const int CHUNKSIZEY = 100;
 //const int W = 1200;
@@ -33,6 +33,8 @@ const int CHUNKSIZEY = 100;
 //const float LIFETIME_MS = 50000;
 const int FILL_PERC = 1;
 const int ITHREADS = 4;
+//const int FPS_LIMIT = 300;
+const int FPS_LIMIT = 0;
 
 
 //const sf::Time LIFETIME = sf::seconds(LIFETIME_MS);

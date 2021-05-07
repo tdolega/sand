@@ -7,19 +7,19 @@
 
 #include "importsxd.h"
 
-const int W = 2400;
-const int H = 1200;
-const int PIXEL_SIZE = 1;
+//const int W = 2400;
+//const int H = 1200;
+//const int PIXEL_SIZE = 1;
 //int brushSize = 80;
 
 //const int W = 600;
 //const int H = 300;
 //int brushSize = 20;
 
-//const int W = 400;
-//const int H = 200;
+const int W = 400;
+const int H = 200;
 int brushSize = 3;
-//const int PIXEL_SIZE = 4;
+const int PIXEL_SIZE = 4;
 
 const int CHUNKSIZEX = 200;
 const int CHUNKSIZEY = 200;
